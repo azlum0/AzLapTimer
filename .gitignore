@@ -1,0 +1,10 @@
+node_modules
+dist
+site
+.dev-extension
+.DS_Store
+*.log
+.env*
+
+# machine-specific preview launcher
+.claude/launch.json

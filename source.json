@@ -1,0 +1,8 @@
+{
+  "name": "Az Lap Timer",
+  "description": "Racelogic-style predictive lap timer for sim racing on the Car Thing.",
+  "homepage": "https://github.com/azlum0/AzLapTimer",
+  "icon": null,
+  "base_url": "https://azlum0.github.io/AzLapTimer",
+  "recommended_sources": []
+}

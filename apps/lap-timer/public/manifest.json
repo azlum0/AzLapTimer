@@ -1,0 +1,15 @@
+{
+  "id": "01a1080d-fc9e-735f-bce1-7edff2669de7",
+  "name": "Lap Timer",
+  "version": "0.3.0",
+  "description": "Predictive lap timer for sim racing: live delta to your best lap, lap times and speed, read from the sim on your PC.",
+  "icon": "icon.svg",
+  "permissions": [],
+  "extension": {
+    "entry": "extension/desktop.mjs",
+    "permissions": [
+      "ffi"
+    ],
+    "api": 1
+  }
+}

@@ -33,7 +33,7 @@ speed than the reference did there, red builds left when carrying less.
 | Preset 1        | Delta: live gap to the reference, predicted  |
 | Preset 2        | Laps: current, last, session best, lap list  |
 | Preset 3        | Speed: speedometer and top speed this lap    |
-| Preset 4        | Options: Timing page, press again for Display |
+| Preset 4        | Options: Display page, press again for Timing |
 | Dial            | Step through the screens                     |
 | Back            | Return to Delta                              |
 | Tap the screen  | Next timing screen                           |
@@ -42,10 +42,26 @@ Crossing the line holds the finished lap time on screen for a few seconds. The r
 your best ever for the car and track (kept between sessions), the session best, or the last lap.
 A lap through the pits, or one the sim invalidates, is listed but never becomes the reference.
 
-The Timing page picks the reference lap, switches between the sim and demo laps, and clears the
-best lap or resets the session. The Display page picks one of six colour schemes, whether the
-delta colours the digits or floods the whole screen, km/h or mph, how much speed each LED stands
-for, and how long a finished lap stays up. Display choices are kept on the Car Thing.
+After three minutes with no sim running the screen goes black, with a small Az mark in the corner.
+A tap, a button, the dial, or a sim starting wakes it.
+
+The Display page sets how it looks:
+
+- one of twelve colour schemes
+- whether the first screen uses the standard look or copies a Racelogic VBOX LapTimer: six lamps,
+  condensed white numerals with the speed alongside, and a delta-T bar
+- where the delta's colour goes: nowhere, onto the digits, across the whole screen in one colour or
+  the other, or across the whole screen as a blend between the two as the gap changes
+- a plain background or a moving one. A colour that fills the screen would hide a moving
+  background, so while one is on the digits carry the colour instead
+
+The Timing page picks the reference lap, switches between the sim and demo laps, clears the best
+lap or resets the session, and sets km/h or mph, how much speed each LED stands for, and how long
+a finished lap stays up. All of these choices are kept on the Car Thing.
+
+Moving backgrounds are the files in [Assets](Assets): each one that exports a `draw` function is
+a choice on the Display page, named after the file. [Assets/README.md](Assets/README.md) has the
+shape of the file and a prompt for having a chat model write one.
 
 ## Sims
 

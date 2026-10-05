@@ -39,6 +39,10 @@ The `ctx` contract, the permission grammar, the dev loop, and the gotchas:
   screen owns how it looks: `src/settings.ts` keeps the display choices in `client.store`, and a
   colour scheme is applied by setting the base theme variables on the root element, which every
   mixed colour in `index.css` follows.
+- Moving backgrounds live in the repo's top-level `Assets` folder, not in `src`. `src/animations.ts`
+  globs them in, so adding one is dropping a file there. They are bundled but deliberately left
+  out of both tsconfigs: they are often written by a chat model and should not have to pass the
+  app's strict settings. `src/background.tsx` runs them and stops one that throws.
 - Sizes and colours that a utility class and a caller might both set go through a prop
   (`Label size`, `bright`), because two classes for the same property resolve by stylesheet
   order, not by the order they are written.

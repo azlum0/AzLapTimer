@@ -1,7 +1,7 @@
 {
   "$schema": "https://apps.bridgething.com/schemas/catalog/v1.json",
   "schema": "catalog.v1",
-  "updated_at": "2026-10-05T18:35:52.293Z",
+  "updated_at": "2026-10-05T21:40:46.588Z",
   "repo": {
     "name": "Az Lap Timer",
     "description": "Racelogic-style predictive lap timer for sim racing on the Car Thing.",
@@ -26,6 +26,24 @@
       "homepage": "https://github.com/azlum0/AzLapTimer",
       "source": "https://github.com/azlum0/AzLapTimer",
       "versions": [
+        {
+          "version": "0.14.0",
+          "released_at": "2026-10-05T21:40:46.556Z",
+          "download": {
+            "url": "https://azlum0.github.io/AzLapTimer/r/01a1080d-fc9e-735f-bce1-7edff2669de7/0.14.0.zip",
+            "size": 992661,
+            "sha256": "8bce4cc4ee31532a3e197e7647911e44022de12d8cd686871433c4ed9ca83268"
+          },
+          "permissions": [],
+          "extension": {
+            "desktop": true,
+            "permissions": [
+              "ffi"
+            ]
+          },
+          "min_libbridgething_version": "0.12.1",
+          "changelog": "Sleep turns the backlight right down and restores it on waking. A Sleep now button on the waiting screen."
+        },
         {
           "version": "0.13.1",
           "released_at": "2026-10-05T18:35:52.289Z",

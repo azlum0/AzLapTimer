@@ -95,18 +95,27 @@ export function Choice<T extends string | number>({
   value,
   onPick,
   className = 'h-14',
+  unavailable = [],
+  columns,
 }: {
   options: readonly (readonly [value: T, label: string])[];
   value: T;
   onPick(value: T): void;
   className?: string;
+  /** options shown faded and not pickable, because another setting is overriding them for now */
+  unavailable?: readonly T[];
+  /** lay the options out this many to a row, wrapping onto more rows, instead of all in one */
+  columns?: number;
 }) {
   return (
-    <div className="flex gap-2">
+    <div
+      className={columns ? 'grid gap-2' : 'flex gap-2'}
+      style={columns ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` } : undefined}>
       {options.map(([option, label]) => (
         <button
           key={option}
-          className={`flex-1 ${className} ${BUTTON} ${option === value ? PICKED : UNPICKED}`}
+          disabled={unavailable.includes(option)}
+          className={`flex-1 ${className} ${BUTTON} ${option === value ? PICKED : UNPICKED} disabled:opacity-30`}
           onClick={() => onPick(option)}>
           {label}
         </button>

@@ -1,6 +1,18 @@
 import { useEffect, useState } from 'react';
-import { delta, lapTime, speed, tone, unitLabel } from './format';
-import { FLASH_SECONDS, LED_STEPS, SCHEMES, type SchemeId, type Settings } from './settings';
+import { delta, lapTime, rlDelta, rlLapTime, speed, tone, unitLabel } from './format';
+import { ANIMATIONS } from './animations';
+import {
+  backdropInUse,
+  deltaStyleInUse,
+  PLAIN,
+  FLASH_SECONDS,
+  LED_STEPS,
+  SCHEMES,
+  SCREEN_FILLING,
+  type DeltaStyle,
+  type SchemeId,
+  type Settings,
+} from './settings';
 import type { Frame, LapRecord, RefMode, Session } from './shared/protocol';
 import type { Feed, Status, Telemetry } from './telemetry';
 import { Button, Cell, Choice, Digits, Field, Label, LedBar } from './ui';
@@ -26,15 +38,38 @@ function Tag({ frame }: { frame: Frame }) {
   return null;
 }
 
+/** how far from level the delta has to be for the blended background to reach one pure colour */
+const GRADIENT_FULL_SECONDS = 0.5;
+
+/** the colour to flood the delta screen with, or null when the digits carry the colour instead */
+function floodColour(style: DeltaStyle, seconds: number): string | null {
+  if (style === 'flood') {
+    const now = tone(seconds);
+    return now === 'level' ? null : `var(--color-${now})`;
+  }
+  if (style === 'gradient') {
+    const faster = Math.min(Math.max(0.5 - seconds / (2 * GRADIENT_FULL_SECONDS), 0), 1);
+    // mixed through oklch, so half way between the two is a clean in-between hue and not a muddy grey
+    return `color-mix(in oklch, var(--color-faster) ${Math.round(faster * 100)}%, var(--color-slower))`;
+  }
+  return null;
+}
+
 /** the predictive screen: how far up or down on the reference lap, right now */
-export function DeltaScreen({ frame, session, settings, flash }: ScreenProps) {
+export function DeltaScreen(props: ScreenProps) {
+  return props.settings.deltaLook === 'racelogic' ? <RacelogicDelta {...props} /> : <StandardDelta {...props} />;
+}
+
+function StandardDelta({ frame, session, settings, flash }: ScreenProps) {
   const refMode = session?.refMode ?? 'best';
   const last = session?.laps.at(-1) ?? null;
   const now = tone(frame.delta);
   const showing = !flash && frame.live && frame.delta !== null;
+  const style = deltaStyleInUse(settings);
   // with the screen flooded the colour is the background, so the digits go back to the text colour
-  const flooded = showing && settings.deltaStyle === 'flood' && now !== 'level';
-  const tint = flooded ? 'text-off-white' : TONE[now];
+  const flood = showing ? floodColour(style, frame.delta!) : null;
+  const flooded = flood !== null;
+  const tint = flooded || style === 'off' ? 'text-off-white' : TONE[now];
 
   let main;
   if (flash) {
@@ -42,7 +77,7 @@ export function DeltaScreen({ frame, session, settings, flash }: ScreenProps) {
       <>
         <Label>Lap {flash.n}</Label>
         <Digits text={lapTime(flash.time)} size={148} className={flash.valid ? '' : 'text-soft'} />
-        <div className={`h-12 ${TONE[tone(session?.lastDelta)]}`}>
+        <div className={`h-12 ${style === 'off' ? '' : TONE[tone(session?.lastDelta)]}`}>
           {session?.lastDelta !== null && session?.lastDelta !== undefined && (
             <Digits text={delta(session.lastDelta)} size={46} />
           )}
@@ -75,7 +110,7 @@ export function DeltaScreen({ frame, session, settings, flash }: ScreenProps) {
   return (
     <div
       className="flex h-full flex-col px-7 pt-6 pb-4"
-      style={flooded ? { background: `color-mix(in srgb, var(--color-${now}) 62%, var(--color-screen))` } : undefined}>
+      style={flooded ? { background: `color-mix(in srgb, ${flood} 62%, var(--color-screen))` } : undefined}>
       <LedBar value={frame.live ? frame.deltaV : null} perLed={perLed(settings)} plain={flooded} />
       <div className="flex flex-1 flex-col items-center justify-center gap-3">{main}</div>
       <div className={`flex items-end gap-6 border-t pt-3 ${flooded ? 'border-off-white' : 'border-rule-strong'}`}>
@@ -95,6 +130,134 @@ export function DeltaScreen({ frame, session, settings, flash }: ScreenProps) {
           <Digits text={lapTime(frame.ref)} size={50} className={flooded ? '' : 'text-near'} />
         </Cell>
       </div>
+    </div>
+  );
+}
+
+const RL_FONT = { fontFamily: 'Anton, Impact, "Arial Narrow", sans-serif' };
+const RL_BAR_SECONDS = 2;
+const RL_LEDS_PER_SIDE = 3;
+
+/** the unit's bold condensed numerals, each digit in a cell of the same width */
+function RlDigits({ text, size, className = '' }: { text: string; size: number; className?: string }) {
+  return (
+    <span className={`inline-flex items-baseline leading-none ${className}`} style={{ ...RL_FONT, fontSize: size }}>
+      {Array.from(text, (char, i) => (
+        <span
+          key={i}
+          className="inline-block text-center"
+          style={{ width: /[0-9+−-]/.test(char) ? '0.47em' : '0.2em' }}>
+          {char}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** the six lamps above the unit's screen: red out to the left when slower, green out to the right when faster */
+function RlLeds({ value, perLed, plain }: { value: number | null; perLed: number; plain: boolean }) {
+  const lit = value === null ? 0 : Math.min(RL_LEDS_PER_SIDE, Math.round(Math.abs(value) / perLed));
+  const slower = value !== null && value < 0;
+  return (
+    <div className="flex justify-center gap-[62px]">
+      {Array.from({ length: RL_LEDS_PER_SIDE * 2 }, (_, i) => {
+        const left = i < RL_LEDS_PER_SIDE;
+        const fromCentre = left ? RL_LEDS_PER_SIDE - 1 - i : i - RL_LEDS_PER_SIDE;
+        const on = left === slower && fromCentre < lit;
+        // a lamp in the delta colour would vanish into a screen flooded with that same colour
+        const colour = plain
+          ? 'bg-off-white'
+          : left
+            ? 'bg-slower shadow-[0_0_18px_var(--color-slower)]'
+            : 'bg-faster shadow-[0_0_18px_var(--color-faster)]';
+        return <div key={i} className={`h-[26px] w-[26px] rounded-full ${on ? colour : 'bg-edge'}`} />;
+      })}
+    </div>
+  );
+}
+
+/** the unit's delta-t bar graph: a scale, with a block growing right from the middle when behind and left when ahead */
+function RlBar({ seconds }: { seconds: number | null }) {
+  const reach = seconds === null ? 0 : Math.min(Math.abs(seconds) / RL_BAR_SECONDS, 1) * 50;
+  return (
+    <div className="relative h-[62px]">
+      <div className="absolute inset-x-0 top-[10px] h-[3px] bg-off-white" />
+      {[0, 25, 50, 75, 100].map(at => (
+        <div
+          key={at}
+          className="absolute top-0 h-[13px] w-[3px] bg-off-white"
+          style={{ left: `calc(${at}% - ${at === 0 ? 0 : at === 100 ? 3 : 1.5}px)` }}
+        />
+      ))}
+      <div
+        className="absolute top-[20px] bottom-0 bg-off-white"
+        style={
+          seconds !== null && seconds < 0 ? { right: '50%', width: `${reach}%` } : { left: '50%', width: `${reach}%` }
+        }
+      />
+    </div>
+  );
+}
+
+/**
+ * The first screen drawn the way a Racelogic VBOX LapTimer draws predictive lap timing: lamps for
+ * the speed difference, the delta as plus or minus seconds and hundredths with the speed beside
+ * it, and the delta-t bar underneath. The unit itself shows one colour only, which is what the
+ * delta colour setting gives when it is off.
+ */
+function RacelogicDelta({ frame, session, settings, flash }: ScreenProps) {
+  const last = session?.laps.at(-1) ?? null;
+  const showing = !flash && frame.live && frame.delta !== null;
+  const lapCount = String(frame.lap).padStart(2, '0');
+  const style = deltaStyleInUse(settings);
+  const flood = showing ? floodColour(style, frame.delta!) : null;
+  const flooded = flood !== null;
+  const tint = (seconds: number | null | undefined) => (flooded || style === 'off' ? '' : TONE[tone(seconds)]);
+
+  let main;
+  if (flash) {
+    main = (
+      <>
+        <RlDigits text={rlLapTime(flash.time)} size={190} />
+        {session?.lastDelta !== null && session?.lastDelta !== undefined && (
+          <RlDigits
+            className={`self-end pb-3 ${tint(session.lastDelta)}`}
+            text={rlDelta(session.lastDelta)}
+            size={62}
+          />
+        )}
+      </>
+    );
+  } else if (showing) {
+    main = (
+      <>
+        <RlDigits text={rlDelta(frame.delta!)} size={204} className={tint(frame.delta)} />
+        <div className="flex flex-col items-end gap-2" style={RL_FONT}>
+          <RlDigits text={speed(frame.speed, settings.units).toFixed(1)} size={84} />
+          <span className="text-[44px] leading-none">{settings.units === 'mph' ? 'mph' : 'km/h'}</span>
+        </div>
+      </>
+    );
+  } else {
+    const time = frame.live ? rlLapTime(frame.time, 1) : rlLapTime(last?.time ?? null);
+    main = (
+      <>
+        <RlDigits text={time} size={190} />
+        <div className="flex flex-col items-end gap-3" style={RL_FONT}>
+          <span className="text-[44px] leading-none">Lap</span>
+          <RlDigits text={lapCount} size={64} />
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <div
+      className="flex h-full flex-col px-9 pt-9 pb-8"
+      style={flooded ? { background: `color-mix(in srgb, ${flood} 62%, var(--color-screen))` } : undefined}>
+      <RlLeds value={frame.live ? frame.deltaV : null} perLed={perLed(settings)} plain={flooded} />
+      <div className="flex flex-1 items-center justify-between gap-4">{main}</div>
+      <RlBar seconds={showing ? frame.delta : null} />
     </div>
   );
 }
@@ -190,8 +353,8 @@ export function SpeedScreen({ frame, settings }: ScreenProps) {
 export type OptionsPage = 'setup' | 'display';
 
 const PAGES = [
-  ['setup', 'TIMING'],
   ['display', 'DISPLAY'],
+  ['setup', 'TIMING'],
 ] as const;
 
 function Pages({ page, onPage }: { page: OptionsPage; onPage(page: OptionsPage): void }) {
@@ -216,6 +379,12 @@ const REF_OPTIONS = [
   ['session', 'SESSION BEST'],
   ['last', 'LAST LAP'],
 ] as const;
+const UNIT_OPTIONS = [
+  ['kmh', 'KM/H'],
+  ['mph', 'MPH'],
+] as const;
+const LED_OPTIONS = LED_STEPS.map(step => [step, String(step)] as const);
+const FLASH_OPTIONS = FLASH_SECONDS.map(seconds => [seconds, `${seconds} S`] as const);
 const FEED_OPTIONS = [
   ['desktop', 'SIM'],
   ['demo', 'DEMO LAPS'],
@@ -249,7 +418,17 @@ function Confirm({ label, onConfirm }: { label: string; onConfirm(): void }) {
 }
 
 /** what the timer measures against, and where its numbers come from */
-export function SetupScreen({ telemetry, onPage }: { telemetry: Telemetry; onPage(page: OptionsPage): void }) {
+export function SetupScreen({
+  telemetry,
+  settings,
+  update,
+  onPage,
+}: {
+  telemetry: Telemetry;
+  settings: Settings;
+  update(change: Partial<Settings>): void;
+  onPage(page: OptionsPage): void;
+}) {
   const { session, status, feed, setFeed, send } = telemetry;
   const combo = [session?.track, session?.car].filter(Boolean).join(' · ');
   return (
@@ -269,6 +448,21 @@ export function SetupScreen({ telemetry, onPage }: { telemetry: Telemetry; onPag
           </div>
         </Field>
       </div>
+      <div className="flex gap-5">
+        <Field className="flex-1" label="Speed in">
+          <Choice options={UNIT_OPTIONS} value={settings.units} onPick={units => update({ units })} />
+        </Field>
+        <Field className="flex-1" label={`Each LED, ${unitLabel(settings.units)}`}>
+          <Choice options={LED_OPTIONS} value={settings.ledStep} onPick={ledStep => update({ ledStep })} />
+        </Field>
+        <Field className="flex-1" label="Hold lap time">
+          <Choice
+            options={FLASH_OPTIONS}
+            value={settings.flashSeconds}
+            onPick={flashSeconds => update({ flashSeconds })}
+          />
+        </Field>
+      </div>
       <div className="mt-auto flex items-end justify-between gap-6 border-t border-rule-strong pt-3">
         <div className="min-w-0">
           <div className="text-[18px] text-near">{feed === 'demo' ? 'Demo laps' : STATUS_TEXT[status]}</div>
@@ -283,34 +477,32 @@ export function SetupScreen({ telemetry, onPage }: { telemetry: Telemetry; onPag
   );
 }
 
+const LOOK_OPTIONS = [
+  ['standard', 'STANDARD'],
+  ['racelogic', 'RACELOGIC'],
+] as const;
 const STYLE_OPTIONS = [
+  ['off', 'OFF'],
   ['digits', 'DIGITS'],
-  ['flood', 'FULL SCREEN'],
+  ['flood', 'FULL'],
+  ['gradient', 'GRADIENT'],
 ] as const;
-const UNIT_OPTIONS = [
-  ['kmh', 'KM/H'],
-  ['mph', 'MPH'],
-] as const;
-const LED_OPTIONS = LED_STEPS.map(step => [step, String(step)] as const);
-const FLASH_OPTIONS = FLASH_SECONDS.map(seconds => [seconds, `${seconds} S`] as const);
 
 /** one colour scheme, drawn in its own colours so it can be judged before it is picked */
 function Swatch({ id, picked, onPick }: { id: SchemeId; picked: boolean; onPick(): void }) {
   const scheme = SCHEMES[id];
   return (
     <button
-      className="flex h-16 items-center justify-between px-4"
+      aria-label={scheme.label}
+      className="flex h-[50px] items-center justify-center gap-[6px]"
       style={{
         background: scheme.screen,
-        color: scheme.fg,
         boxShadow: picked ? `inset 0 0 0 3px ${scheme.fg}` : `inset 0 0 0 1px ${scheme.fg}55`,
       }}
       onClick={onPick}>
-      <span className="font-mono text-[17px] tracking-[0.08em] uppercase">{scheme.label}</span>
-      <span className="flex gap-[5px]">
-        <span className="h-6 w-4 rounded-[3px]" style={{ background: scheme.slower }} />
-        <span className="h-6 w-4 rounded-[3px]" style={{ background: scheme.faster }} />
-      </span>
+      <span className="h-7 w-[18px] rounded-[3px]" style={{ background: scheme.slower }} />
+      <span className="h-7 w-[10px] rounded-[3px]" style={{ background: scheme.fg }} />
+      <span className="h-7 w-[18px] rounded-[3px]" style={{ background: scheme.faster }} />
     </button>
   );
 }
@@ -328,49 +520,47 @@ export function DisplayScreen({
   return (
     <div className="flex h-full flex-col gap-[14px] px-7 pt-4 pb-5">
       <Pages page="display" onPage={onPage} />
-      <Field label="Colours">
-        <div className="grid grid-cols-3 gap-2">
+      <Field
+        label={
+          <>
+            Colours <span className="text-off-white">{SCHEMES[settings.scheme].label}</span>
+          </>
+        }>
+        <div className="grid grid-cols-6 gap-2">
           {(Object.keys(SCHEMES) as SchemeId[]).map(id => (
             <Swatch key={id} id={id} picked={id === settings.scheme} onPick={() => update({ scheme: id })} />
           ))}
         </div>
       </Field>
       <div className="flex gap-6">
-        <Field className="flex-1" label="Delta colour on">
+        <Field className="flex-[3]" label="First screen">
           <Choice
-            className="h-[54px]"
+            className="h-[52px]"
+            options={LOOK_OPTIONS}
+            value={settings.deltaLook}
+            onPick={deltaLook => update({ deltaLook })}
+          />
+        </Field>
+        <Field className="flex-[5]" label="Delta colour">
+          {/* with the background moving, the screen-filling choices give way to the digits and come back with it off */}
+          <Choice
+            className="h-[52px]"
             options={STYLE_OPTIONS}
-            value={settings.deltaStyle}
+            value={deltaStyleInUse(settings)}
+            unavailable={backdropInUse(settings) ? SCREEN_FILLING : []}
             onPick={deltaStyle => update({ deltaStyle })}
           />
         </Field>
-        <Field className="flex-1" label="Speed in">
-          <Choice
-            className="h-[54px]"
-            options={UNIT_OPTIONS}
-            value={settings.units}
-            onPick={units => update({ units })}
-          />
-        </Field>
       </div>
-      <div className="flex gap-6">
-        <Field className="flex-1" label={`Each LED, ${unitLabel(settings.units)}`}>
-          <Choice
-            className="h-[54px]"
-            options={LED_OPTIONS}
-            value={settings.ledStep}
-            onPick={ledStep => update({ ledStep })}
-          />
-        </Field>
-        <Field className="flex-1" label="Hold lap time">
-          <Choice
-            className="h-[54px]"
-            options={FLASH_OPTIONS}
-            value={settings.flashSeconds}
-            onPick={flashSeconds => update({ flashSeconds })}
-          />
-        </Field>
-      </div>
+      <Field label="Background">
+        <Choice
+          className="h-[52px]"
+          columns={5}
+          options={[[PLAIN, 'PLAIN'], ...ANIMATIONS.map(({ id, label }) => [id, label.toUpperCase()] as const)]}
+          value={backdropInUse(settings)?.id ?? PLAIN}
+          onPick={backdrop => update({ backdrop })}
+        />
+      </Field>
     </div>
   );
 }

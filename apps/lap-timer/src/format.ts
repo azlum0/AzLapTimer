@@ -32,3 +32,20 @@ export function tone(seconds: number | null | undefined): 'faster' | 'slower' | 
   if (seconds === null || seconds === undefined || Math.abs(seconds) < 0.005) return 'level';
   return seconds < 0 ? 'faster' : 'slower';
 }
+
+/** a delta the way a racelogic unit writes it: sign, two digits of seconds, hundredths */
+export function rlDelta(seconds: number): string {
+  const size = Math.min(Math.abs(seconds), 99.99);
+  return `${seconds < 0 ? MINUS : '+'}${size.toFixed(2).padStart(5, '0')}`;
+}
+
+/** a lap time the way a racelogic unit writes it: 2'08.40 */
+export function rlLapTime(seconds: number | null | undefined, places = 2): string {
+  if (seconds === null || seconds === undefined || !Number.isFinite(seconds) || seconds < 0) {
+    return places === 2 ? "-'--.--" : "-'--.-";
+  }
+  const scale = 10 ** places;
+  const total = Math.round(seconds * scale) / scale;
+  const minutes = Math.floor(total / 60);
+  return `${minutes}'${(total - minutes * 60).toFixed(places).padStart(places + 3, '0')}`;
+}

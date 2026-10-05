@@ -1,5 +1,6 @@
 import type { BridgethingClient } from '@bridgething/client';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ANIMATIONS, type Animation } from './animations';
 import type { Units } from './format';
 
 export interface Scheme {
@@ -11,32 +12,43 @@ export interface Scheme {
   ledOff: string;
 }
 
+const scheme = (label: string, screen: string, fg: string, faster: string, slower: string, ledOff: string): Scheme => ({
+  label,
+  screen,
+  fg,
+  faster,
+  slower,
+  ledOff,
+});
+
 export const SCHEMES = {
-  classic: {
-    label: 'Classic',
-    screen: '#060809',
-    fg: '#efefef',
-    faster: '#2fe36d',
-    slower: '#ff4136',
-    ledOff: '#17191b',
-  },
+  classic: scheme('Classic', '#060809', '#efefef', '#2fe36d', '#ff4136', '#17191b'),
   // blue against orange stays apart for red-green colour blindness
-  contrast: {
-    label: 'Blue / Orange',
-    screen: '#05070a',
-    fg: '#f2f2f2',
-    faster: '#3aa0ff',
-    slower: '#ff9f1a',
-    ledOff: '#161a1f',
-  },
-  amber: { label: 'Amber', screen: '#080602', fg: '#ffb629', faster: '#9be564', slower: '#ff5a36', ledOff: '#1c1608' },
-  ice: { label: 'Ice', screen: '#040912', fg: '#dff3ff', faster: '#29e0ff', slower: '#ff4fa3', ledOff: '#101a28' },
-  night: { label: 'Night', screen: '#000000', fg: '#8a8a8a', faster: '#1f9c4b', slower: '#b32d25', ledOff: '#0e0e0e' },
-  light: { label: 'Light', screen: '#f3f3ee', fg: '#101214', faster: '#0a8f3c', slower: '#d21f14', ledOff: '#dadad3' },
+  contrast: scheme('Blue / Orange', '#05070a', '#f2f2f2', '#3aa0ff', '#ff9f1a', '#161a1f'),
+  timing: scheme('Purple / Yellow', '#07060a', '#f2f2f2', '#c45cff', '#ffd60a', '#19161f'),
+  neon: scheme('Neon', '#07060b', '#ffffff', '#b6ff00', '#ff2d95', '#18161f'),
+  ice: scheme('Ice', '#040912', '#dff3ff', '#29e0ff', '#ff4fa3', '#101a28'),
+  gulf: scheme('Gulf', '#06121f', '#e9f4ff', '#6fc8ff', '#ff7a1a', '#102338'),
+  amber: scheme('Amber', '#080602', '#ffb629', '#9be564', '#ff5a36', '#1c1608'),
+  phosphor: scheme('Phosphor', '#010501', '#45ff7a', '#d9ff5c', '#ff6a3d', '#08190c'),
+  cockpit: scheme('Cockpit red', '#050000', '#ff5148', '#49d17a', '#ffb02e', '#1c0605'),
+  blueprint: scheme('Blueprint', '#07205a', '#ffffff', '#7dff8a', '#ffb347', '#12327a'),
+  night: scheme('Night', '#000000', '#8a8a8a', '#1f9c4b', '#b32d25', '#0e0e0e'),
+  light: scheme('Light', '#f3f3ee', '#101214', '#0a8f3c', '#d21f14', '#dadad3'),
 } as const satisfies Record<string, Scheme>;
 
 export type SchemeId = keyof typeof SCHEMES;
-export type DeltaStyle = 'digits' | 'flood';
+/**
+ * Where the delta's colour goes: nowhere, onto the digits, across the whole screen in one colour
+ * or the other, or across the whole screen as a blend between the two.
+ */
+export type DeltaStyle = 'off' | 'digits' | 'flood' | 'gradient';
+export const SCREEN_FILLING: readonly DeltaStyle[] = ['flood', 'gradient'];
+/** the first screen as designed for this display, or drawn the way a Racelogic VBOX LapTimer draws it */
+export type DeltaLook = 'standard' | 'racelogic';
+
+/** no background, for the backdrop setting */
+export const PLAIN = 'off';
 
 export const LED_STEPS = [1, 2, 5] as const;
 export const FLASH_SECONDS = [3, 6, 10] as const;
@@ -44,8 +56,10 @@ export const FLASH_SECONDS = [3, 6, 10] as const;
 export interface Settings {
   units: Units;
   scheme: SchemeId;
-  /** colour the delta digits, or flood the whole screen with the colour */
+  deltaLook: DeltaLook;
   deltaStyle: DeltaStyle;
+  /** `PLAIN`, or the id of the animation to run behind the timing screens */
+  backdrop: string;
   /** speed difference each led stands for, in the chosen unit */
   ledStep: (typeof LED_STEPS)[number];
   /** how long a finished lap stays on screen */
@@ -55,7 +69,9 @@ export interface Settings {
 export const DEFAULTS: Settings = {
   units: 'kmh',
   scheme: 'classic',
+  deltaLook: 'standard',
   deltaStyle: 'digits',
+  backdrop: PLAIN,
   ledStep: 1,
   flashSeconds: 6,
 };
@@ -77,10 +93,23 @@ export function parseSettings(text: string | null | undefined): Settings {
   return {
     units: oneOf(raw.units, ['kmh', 'mph'] as const, DEFAULTS.units),
     scheme: oneOf(raw.scheme, Object.keys(SCHEMES) as SchemeId[], DEFAULTS.scheme),
-    deltaStyle: oneOf(raw.deltaStyle, ['digits', 'flood'] as const, DEFAULTS.deltaStyle),
+    deltaLook: oneOf(raw.deltaLook, ['standard', 'racelogic'] as const, DEFAULTS.deltaLook),
+    deltaStyle: oneOf(raw.deltaStyle, ['off', 'digits', 'flood', 'gradient'] as const, DEFAULTS.deltaStyle),
+    // before there was more than one animation the setting was just on or off
+    backdrop: raw.backdrop === 'animated' ? 'streaks' : typeof raw.backdrop === 'string' ? raw.backdrop : PLAIN,
     ledStep: oneOf(raw.ledStep, LED_STEPS, DEFAULTS.ledStep),
     flashSeconds: oneOf(raw.flashSeconds, FLASH_SECONDS, DEFAULTS.flashSeconds),
   };
+}
+
+/** the animation the setting names, or null for a plain background or one that is no longer in the app */
+export function backdropInUse(settings: Settings): Animation | null {
+  return ANIMATIONS.find(animation => animation.id === settings.backdrop) ?? null;
+}
+
+/** a colour that fills the screen would hide a moving background, so with one running the digits carry it */
+export function deltaStyleInUse(settings: Settings): DeltaStyle {
+  return backdropInUse(settings) && SCREEN_FILLING.includes(settings.deltaStyle) ? 'digits' : settings.deltaStyle;
 }
 
 function readLocal(): Settings {
@@ -93,15 +122,15 @@ function readLocal(): Settings {
 
 /** every other colour in the theme is mixed from these, so setting them on the root recolours the lot */
 export function applyScheme(id: SchemeId): void {
-  const scheme = SCHEMES[id];
+  const picked = SCHEMES[id];
   const root = document.documentElement.style;
-  root.setProperty('--color-screen', scheme.screen);
-  root.setProperty('--color-bg', scheme.screen);
-  root.setProperty('--color-fg', scheme.fg);
-  root.setProperty('--color-off-white', scheme.fg);
-  root.setProperty('--color-faster', scheme.faster);
-  root.setProperty('--color-slower', scheme.slower);
-  root.setProperty('--color-led-off', scheme.ledOff);
+  root.setProperty('--color-screen', picked.screen);
+  root.setProperty('--color-bg', picked.screen);
+  root.setProperty('--color-fg', picked.fg);
+  root.setProperty('--color-off-white', picked.fg);
+  root.setProperty('--color-faster', picked.faster);
+  root.setProperty('--color-slower', picked.slower);
+  root.setProperty('--color-led-off', picked.ledOff);
 }
 
 /**

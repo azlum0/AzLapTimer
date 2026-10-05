@@ -190,3 +190,8 @@ Built on [bridgething](https://github.com/JoeyEamigh/bridgething) by Joey Eamigh
 
 This is a hobby project. It is not affiliated with or endorsed by Racelogic, Spotify, iRacing, or
 any of the sims it reads. Their names are used only to say what it works with.
+
+## Licence
+
+[MIT](LICENSE). The fonts keep their own licences, which sit beside them in
+`apps/lap-timer/src/fonts`.

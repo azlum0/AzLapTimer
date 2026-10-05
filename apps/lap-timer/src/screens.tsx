@@ -566,7 +566,7 @@ export function DisplayScreen({
 }
 
 /** shown in place of the timing screens while there is nothing to time */
-export function Standby({ status, onDemo }: { status: Status; onDemo(): void }) {
+export function Standby({ status, onDemo, onSleep }: { status: Status; onDemo(): void; onSleep(): void }) {
   const offline = status === 'offline';
   return (
     <div className="flex h-full flex-col items-center justify-center gap-5 px-14 text-center">
@@ -578,14 +578,25 @@ export function Standby({ status, onDemo }: { status: Status; onDemo(): void }) 
           ? 'Plug the Car Thing into the sim PC over USB and open the bridgething desktop app there. The lap timer starts on its own once the two are linked.'
           : 'Linked to the PC. Start iRacing, Le Mans Ultimate, Automobilista 2 or RaceRoom and head out on track.'}
       </div>
-      <button
-        className="mt-3 h-14 border border-edge px-8 font-mono text-[17px] tracking-[0.1em] text-near active:bg-neutral-soft"
-        onClick={event => {
-          event.stopPropagation();
-          onDemo();
-        }}>
-        SHOW DEMO LAPS
-      </button>
+      <div className="mt-3 flex gap-3">
+        <button
+          className="h-14 border border-edge px-8 font-mono text-[17px] tracking-[0.1em] text-near active:bg-neutral-soft"
+          onClick={event => {
+            event.stopPropagation();
+            onDemo();
+          }}>
+          SHOW DEMO LAPS
+        </button>
+        <button
+          className="h-14 border border-edge px-8 font-mono text-[17px] tracking-[0.1em] text-near active:bg-neutral-soft"
+          onClick={event => {
+            // a tap anywhere else on this screen turns to the next one, and this one must not
+            event.stopPropagation();
+            onSleep();
+          }}>
+          SLEEP NOW
+        </button>
+      </div>
     </div>
   );
 }

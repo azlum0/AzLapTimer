@@ -22,19 +22,20 @@ into a small programmable display, and it borrows its idea from the Racelogic VB
   is running.
 - **Your choice of look**: twelve colour schemes, an optional Racelogic-style first screen, the
   delta colour on the digits or flooding the whole screen, and moving backgrounds.
-- **Sleeps when you are not driving**: after three minutes with no sim running the screen goes
-  black, and wakes when one starts.
+- **Sleeps when you are not driving**: after three minutes with no sim running, or at a tap of
+  Sleep now on the waiting screen, the screen goes black and the backlight turns right down. A
+  touch, a button, the dial, or a sim starting wakes it and puts the brightness back.
 
 ## Screens
 
-|                                                                                  |                                                                          |
-| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| ![Racelogic look](apps/lap-timer/screenshots/02-racelogic.png)                   | ![Gradient delta colour](apps/lap-timer/screenshots/03-gradient.png)     |
-| **Racelogic look.** Six lamps, condensed numerals, speed, and a delta-T bar.     | **Delta colour across the screen**, blending as the gap changes.         |
-| ![Aurora background](apps/lap-timer/screenshots/04-aurora.png)                   | ![Lap times](apps/lap-timer/screenshots/05-laps.png)                     |
-| **Moving background.** Aurora, one of the backgrounds that ship with it.         | **Laps.** This lap, the last, the session best, and the run so far.      |
-| ![Speed](apps/lap-timer/screenshots/06-speed.png)                                | ![Display options](apps/lap-timer/screenshots/07-display-options.png)    |
-| **Speed**, with the gap to the reference lap's speed at this point.              | **Display options**, on the device itself.                               |
+|                                                                              |                                                                       |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| ![Racelogic look](apps/lap-timer/screenshots/02-racelogic.png)               | ![Gradient delta colour](apps/lap-timer/screenshots/03-gradient.png)  |
+| **Racelogic look.** Six lamps, condensed numerals, speed, and a delta-T bar. | **Delta colour across the screen**, blending as the gap changes.      |
+| ![Aurora background](apps/lap-timer/screenshots/04-aurora.png)               | ![Lap times](apps/lap-timer/screenshots/05-laps.png)                  |
+| **Moving background.** Aurora, one of the backgrounds that ship with it.     | **Laps.** This lap, the last, the session best, and the run so far.   |
+| ![Speed](apps/lap-timer/screenshots/06-speed.png)                            | ![Display options](apps/lap-timer/screenshots/07-display-options.png) |
+| **Speed**, with the gap to the reference lap's speed at this point.          | **Display options**, on the device itself.                            |
 
 These are screenshots taken off a Car Thing running demo laps.
 

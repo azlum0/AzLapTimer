@@ -1,5 +1,9 @@
 # lap-timer
 
+## 0.14.0
+
+Sleep turns the backlight right down and restores it on waking. A Sleep now button on the waiting screen.
+
 ## 0.13.1
 
 Rosso background redone as a rippling red flag with a yellow band and a white pinstripe.

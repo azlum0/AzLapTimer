@@ -43,6 +43,9 @@ The `ctx` contract, the permission grammar, the dev loop, and the gotchas:
   globs them in, so adding one is dropping a file there. They are bundled but deliberately left
   out of both tsconfigs: they are often written by a chat model and should not have to pass the
   app's strict settings. `src/background.tsx` runs them and stops one that throws.
+- `src/sleep.tsx` blacks the screen and turns the backlight down when no sim is running. The
+  device remembers its brightness through a restart, so the setting to go back to is written to
+  `client.store` before dimming, and every start of the app undoes what an earlier run left.
 - Sizes and colours that a utility class and a caller might both set go through a prop
   (`Label size`, `bright`), because two classes for the same property resolve by stylesheet
   order, not by the order they are written.

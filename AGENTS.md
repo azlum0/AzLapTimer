@@ -12,7 +12,9 @@ apps/lap-timer/
     shared/         code both halves import: engine.ts (lap timing), protocol.ts (messages)
     screens.tsx     every screen and both options pages
     settings.ts     display choices, kept in the device's store
+    sleep.tsx       the sleep timer, the backlight dimming, and the black screen
     animations.ts   loads the moving backgrounds from Assets/
+    background.tsx  runs the chosen background on a canvas
   extension/        the PC half: a Deno process the bridgething desktop app runs
     sources/        one reader per sim
     core.ts         polls the sim, runs the engine, sends frames
@@ -52,7 +54,8 @@ bun run bump lap-timer <patch|minor>  -m "note"   # version, manifest, and chang
 
 - Run the tests and the typecheck.
 - Look at it. The screen is 800x480 and never resizes; anything visual needs looking at at that size, with demo laps. A demo lap takes about 75 seconds and there is no delta until one is on the board.
-- For anything about performance or the device itself, check on the device. Its browser answers the Chrome DevTools protocol at `bridgething.local:9222` over USB, which gives screenshots, key presses, and frame timing without touching the screen. `.claude/skills/bridgething/reference/develop.md` has a working example.
+- For anything about performance or the device itself, check on the device. Its browser answers the Chrome DevTools protocol at `bridgething.local:9222` over USB, which gives screenshots, key presses, and frame timing without touching the screen. `.claude/skills/bridgething/reference/develop.md` has a working example. For a while after the page reloads the `.local` name is refused; the device's USB address, `10.42.1.42:9222`, keeps answering.
+- `ssh root@bridgething.local` gives a shell on the device. The backlight as it really is sits in `/sys/class/backlight/backlight/brightness` (0 to 160), and the brightness setting the device will come back up with in `/var/lib/bridgething/state/als.json`.
 - A dev server pointed at a connected Car Thing shares that device's settings store. Changing display options in the browser changes them on the real device.
 - Running the dev server while the desktop app is also running the extension gives the screen two sets of frames. Use the built app served as static files, or the probe, to look at things without a second extension.
 
@@ -79,6 +82,18 @@ Listen with `keydown` and `wheel` handlers on `window`.
 Mode is left alone: the launcher gesture uses it. The device has four cores and about 200 MB of free memory, plays H.264 video with hardware help, and held 60 frames a second with a canvas background drawing 480 images a frame.
 
 The SDK, the extension contract, and the manifest fields are covered by the bridgething skill in `.claude/skills/bridgething/`.
+
+## Sleep
+
+`src/sleep.tsx` holds all of it. The screen sleeps after three minutes with no sim running (the offline and waiting states, never demo laps), or at once from the Sleep now button on the waiting screen. A touch, a button, the dial, or a sim starting wakes it. The tap that wakes it is swallowed by the sleep screen so it does not also turn to the next screen.
+
+Asleep, the backlight is turned down through `client.hardware`, and three things about the device shape how:
+
+- It keeps its brightness setting through a restart. So the setting to go back to is written to the device's store before anything is dimmed, and every start of the app undoes dimming an earlier run left behind. Keep that order: it is what recovers from the power going while asleep.
+- In automatic mode a level is only noted, not applied. Dimming sets the level first and then switches to manual, so the screen does not flash on the way down; going back to automatic switches the mode first.
+- The sleep level is deliberately not zero. If the device comes back up in another app first, a dim screen can still be used and a dark one cannot.
+
+With no device attached (the dev server, `?demo`) there is no backlight to turn down, so the sleep screen draws its mark fainter instead.
 
 ## Sim readers
 

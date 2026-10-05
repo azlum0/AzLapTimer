@@ -39,7 +39,10 @@ export default function App() {
   const flash = useLapFlash(session, settings.flashSeconds * 1000);
   const wheelAt = useRef(0);
   // nothing to show while no sim is feeding it, so after a while the screen goes dark until one does
-  const [asleep, wake] = useSleep(feed !== 'demo' && (status === 'offline' || status === 'waiting'));
+  const { asleep, wake, sleepNow, dims } = useSleep(
+    feed !== 'demo' && (status === 'offline' || status === 'waiting'),
+    telemetry.client,
+  );
   const sleeping = useRef(asleep);
   sleeping.current = asleep;
 
@@ -83,7 +86,7 @@ export default function App() {
   if (name === 'setup')
     body = <SetupScreen telemetry={telemetry} settings={settings} update={update} onPage={onPage} />;
   else if (name === 'display') body = <DisplayScreen settings={settings} update={update} onPage={onPage} />;
-  else if (!timing) body = <Standby status={status} onDemo={() => setFeed('demo')} />;
+  else if (!timing) body = <Standby status={status} onDemo={() => setFeed('demo')} onSleep={sleepNow} />;
   else {
     const props = { frame, session, settings, flash };
     body =
@@ -101,7 +104,7 @@ export default function App() {
       className="relative h-full w-full bg-screen text-off-white"
       onPointerDown={wake}
       onClick={() => !options && setScreen(current => (current + 1) % DISPLAY)}>
-      {asleep && <SleepScreen onWake={wake} />}
+      {asleep && <SleepScreen onWake={wake} dimmed={dims} />}
       {backdrop && <Background draw={backdrop.draw} frame={frame} scheme={settings.scheme} />}
       {/* positioned, so it paints over the canvas instead of under it */}
       <div className="relative h-full">{body}</div>

@@ -116,6 +116,8 @@ export function Choice<T extends string | number>({
           key={option}
           disabled={unavailable.includes(option)}
           className={`flex-1 ${className} ${BUTTON} ${option === value ? PICKED : UNPICKED} disabled:opacity-30`}
+          // a grid is used for lists of names, which run long: closer letters keep them off the edges
+          style={columns ? { letterSpacing: '0.02em' } : undefined}
           onClick={() => onPick(option)}>
           {label}
         </button>

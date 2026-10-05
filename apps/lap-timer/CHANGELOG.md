@@ -1,5 +1,29 @@
 # lap-timer
 
+## 0.13.1
+
+Rosso background redone as a rippling red flag with a yellow band and a white pinstripe.
+
+## 0.13.0
+
+Rosso background: a racing-red glow around the edges with red, yellow, and white streaks rushing outward.
+
+## 0.12.0
+
+Navy and red background: a navy field, a slanting red glow, a low yellow sun, and red and yellow dashes charging across.
+
+## 0.11.0
+
+Silver and teal background: two twisting ribbons of fine flowing lines.
+
+## 0.10.0
+
+Blue and yellow background: slanted livery bands sweeping across the screen.
+
+## 0.9.0
+
+Flame background: fire in red, orange, and yellow rising from the foot of the screen, with embers.
+
 ## 0.8.2
 
 Aurora background rewritten: curtains of fine vertical rays with a bright lower edge fading up into violet, over a few stars.

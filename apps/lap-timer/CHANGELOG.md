@@ -1,5 +1,9 @@
 # lap-timer
 
+## 0.14.1
+
+Back on the first screen leaves demo laps.
+
 ## 0.14.0
 
 Sleep turns the backlight right down and restores it on waking. A Sleep now button on the waiting screen.

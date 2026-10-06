@@ -56,7 +56,11 @@ export default function App() {
       // the fourth preset reaches both options pages: a second press turns to the other one
       if (preset === DISPLAY) setScreen(current => (current === DISPLAY ? SETUP : DISPLAY));
       else if (preset >= 0) setScreen(preset);
-      else if (event.key === 'Escape') setScreen(0);
+      // back steps out one level at a time: to the first screen, then out of demo laps
+      else if (event.key === 'Escape') {
+        if (screen === 0 && feed === 'demo') setFeed('desktop');
+        else setScreen(0);
+      }
     };
     const onWheel = (event: WheelEvent) => {
       const turn = event.deltaX || event.deltaY;
@@ -74,7 +78,7 @@ export default function App() {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('wheel', onWheel);
     };
-  }, [wake]);
+  }, [wake, screen, feed, setFeed]);
 
   const name = SCREENS[screen]!;
   const options = name === 'setup' || name === 'display';

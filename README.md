@@ -36,8 +36,10 @@ into a small programmable display, and it borrows its idea from the Racelogic VB
 | **Moving background.** Aurora, one of the backgrounds that ship with it.     | **Laps.** This lap, the last, the session best, and the run so far.   |
 | ![Speed](apps/lap-timer/screenshots/06-speed.png)                            | ![Display options](apps/lap-timer/screenshots/07-display-options.png) |
 | **Speed**, with the gap to the reference lap's speed at this point.          | **Display options**, on the device itself.                            |
+| ![Timing options](apps/lap-timer/screenshots/08-timing-options.png)          | ![Waiting for a sim](apps/lap-timer/screenshots/09-waiting.png)       |
+| **Timing options.** Reference lap, units, and what the LEDs stand for.       | **Waiting for a sim**, with demo laps and sleep a tap away.           |
 
-These are screenshots taken off a Car Thing running demo laps.
+These are screenshots taken off a Car Thing, with demo laps on the timing screens.
 
 ## Controls
 
@@ -48,7 +50,7 @@ These are screenshots taken off a Car Thing running demo laps.
 | Preset 3       | Speed: speedometer and top speed this lap     |
 | Preset 4       | Options: Display page, press again for Timing |
 | Dial           | Step through the screens                      |
-| Back           | Return to Delta                               |
+| Back           | Return to Delta; on Delta, leave demo laps    |
 | Tap the screen | Next timing screen                            |
 
 The **Display** page sets how it looks:
@@ -91,15 +93,33 @@ the same point on track.
 - A Spotify Car Thing flashed with [bridgething](https://bridgething.com)
 - A Windows PC running the sim, with the bridgething desktop app and the Car Thing plugged in
   over USB
-- [Bun](https://bun.sh) to build it
+- [Bun](https://bun.sh), only if you build it yourself
 
 The sim readers use Windows shared memory, so the PC half is Windows only.
 
 ## Install
 
-1. Flash the Car Thing from <https://bridgething.com> (Chrome, USB-C cable) and install the
-   bridgething desktop app on the sim PC.
-2. Build and package:
+Flash the Car Thing from <https://bridgething.com> (Chrome, USB-C cable) and install the
+bridgething desktop app on the sim PC. Then get the app one of two ways.
+
+### From the store
+
+1. In the desktop app, open the store screen.
+2. Find **Lap Timer** under **community apps**. If it is not listed, paste this address into
+   **browse a source by url** and add the source it opens:
+
+   ```text
+   https://azlum0.github.io/AzLapTimer/catalog.v1.json
+   ```
+
+3. Install it. It will ask you to allow the extension to load native libraries, which is how it
+   reads the sim's memory.
+
+New versions show up in the store as updates.
+
+### From this repo
+
+1. Build and package:
 
    ```sh
    bun install
@@ -107,11 +127,10 @@ The sim readers use Windows shared memory, so the PC half is Windows only.
    bun run share
    ```
 
-3. In the desktop app, open the store screen, find **install a local bundle**, and pick
-   `apps/lap-timer/Lap-Timer-<version>.zip`. It will ask you to allow the extension to load
-   native libraries, which is how it reads the sim's memory.
+2. On the desktop app's store screen, find **install a local bundle** and pick
+   `apps/lap-timer/Lap-Timer-<version>.zip`. It asks for the same permission.
 
-The desktop app copies the screen half to the Car Thing and keeps the PC half for itself, so the
+Either way, the desktop app copies the screen half to the Car Thing and keeps the PC half for itself, so the
 timer works whenever the desktop app is open. Turn on **start with this computer** in its settings
 and there is nothing to launch.
 

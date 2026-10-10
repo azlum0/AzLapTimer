@@ -1,7 +1,7 @@
 {
   "$schema": "https://apps.bridgething.com/schemas/catalog/v1.json",
   "schema": "catalog.v1",
-  "updated_at": "2026-10-06T22:31:09.394Z",
+  "updated_at": "2026-10-10T15:22:15.125Z",
   "repo": {
     "name": "Az Lap Timer",
     "description": "Racelogic-style predictive lap timer for sim racing on the Car Thing.",
@@ -26,6 +26,24 @@
       "homepage": "https://github.com/azlum0/AzLapTimer",
       "source": "https://github.com/azlum0/AzLapTimer",
       "versions": [
+        {
+          "version": "0.15.0",
+          "released_at": "2026-10-10T15:22:15.121Z",
+          "download": {
+            "url": "https://azlum0.github.io/AzLapTimer/r/01a1080d-fc9e-735f-bce1-7edff2669de7/0.15.0.zip",
+            "size": 1000207,
+            "sha256": "12804fb53feeeaf824f807b913f8832d776c3575985fead113492c27d3929939"
+          },
+          "permissions": [],
+          "extension": {
+            "desktop": true,
+            "permissions": [
+              "ffi"
+            ]
+          },
+          "min_libbridgething_version": "0.12.1",
+          "changelog": "Nebula background: violet, magenta and yellow gas drifting past stars."
+        },
         {
           "version": "0.14.1",
           "released_at": "2026-10-06T22:31:09.389Z",

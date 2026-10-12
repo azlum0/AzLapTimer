@@ -44,8 +44,12 @@ export type SchemeId = keyof typeof SCHEMES;
  */
 export type DeltaStyle = 'off' | 'digits' | 'flood' | 'gradient';
 export const SCREEN_FILLING: readonly DeltaStyle[] = ['flood', 'gradient'];
-/** the first screen as designed for this display, or drawn the way a Racelogic VBOX LapTimer draws it */
-export type DeltaLook = 'standard' | 'racelogic';
+/**
+ * The first screen as designed for this display, drawn the way a Racelogic VBOX LapTimer draws it,
+ * or given over to a cartoon corgi that drives harder the further ahead the lap is.
+ */
+export const DELTA_LOOKS = ['standard', 'racelogic', 'corgi'] as const;
+export type DeltaLook = (typeof DELTA_LOOKS)[number];
 
 /** no background, for the backdrop setting */
 export const PLAIN = 'off';
@@ -93,7 +97,7 @@ export function parseSettings(text: string | null | undefined): Settings {
   return {
     units: oneOf(raw.units, ['kmh', 'mph'] as const, DEFAULTS.units),
     scheme: oneOf(raw.scheme, Object.keys(SCHEMES) as SchemeId[], DEFAULTS.scheme),
-    deltaLook: oneOf(raw.deltaLook, ['standard', 'racelogic'] as const, DEFAULTS.deltaLook),
+    deltaLook: oneOf(raw.deltaLook, DELTA_LOOKS, DEFAULTS.deltaLook),
     deltaStyle: oneOf(raw.deltaStyle, ['off', 'digits', 'flood', 'gradient'] as const, DEFAULTS.deltaStyle),
     // before there was more than one animation the setting was just on or off
     backdrop: raw.backdrop === 'animated' ? 'streaks' : typeof raw.backdrop === 'string' ? raw.backdrop : PLAIN,

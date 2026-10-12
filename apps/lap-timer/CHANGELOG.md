@@ -1,5 +1,9 @@
 # lap-timer
 
+## 0.16.0
+
+Corgi first screen: a cartoon corgi in a GT3 that dozes off track, cruises when level with the reference lap, and drives harder with every tenth gained.
+
 ## 0.15.0
 
 Nebula background: violet, magenta and yellow gas drifting past stars.

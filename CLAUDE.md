@@ -15,6 +15,7 @@ apps/lap-timer/
     sleep.tsx       the sleep timer, the backlight dimming, and the black screen
     animations.ts   loads the moving backgrounds from Assets/
     background.tsx  runs the chosen background on a canvas
+    corgi.tsx       the corgi look's drawings, and which one a delta picks
   extension/        the PC half: a Deno process the bridgething desktop app runs
     sources/        one reader per sim
     core.ts         polls the sim, runs the engine, sends frames
@@ -22,6 +23,7 @@ apps/lap-timer/
   scripts/          push, share, deploy
   test/             bun tests for the engine and the sim readers
 Assets/             moving backgrounds: each .ts file exporting `draw` is one
+  corgi/            the corgi look's twelve drawings, slowest to fastest
 ```
 
 `apps/lap-timer/CLAUDE.md` goes deeper on the split between the halves and the rules inside each.
@@ -105,6 +107,17 @@ With no device attached (the dev server, `?demo`) there is no backlight to turn 
 ## Moving backgrounds
 
 Files in `Assets/` are bundled into the app but left out of both tsconfigs on purpose: they are often written by a chat model and should not have to pass the app's strict settings. `Assets/README.md` is the contract. `src/background.tsx` runs them at thirty frames a second and stops one that throws.
+
+## The corgi look
+
+The third choice for the first screen. `src/corgi.tsx` picks one of the twelve drawings in `Assets/corgi/`: asleep when
+not on track, waiting when stopped, and otherwise one drawing per tenth of a second of delta, from four tenths down to
+half a second up. A drawing stays until the delta is clearly into the next, so it does not flick between two.
+
+- The files sort by name into order of pace, and `corgi.tsx` counts on there being twelve.
+- They are 720x480 and drawn at that size, so the device never scales them. The originals are 1536x1024 PNGs of about
+  1.5 MB each and are not in the repo; a replacement set needs resizing the same way before it goes in.
+- The drawings are not registered with each other, so a change is a quick fade and not a frame of animation.
 
 ## Versions and publishing
 

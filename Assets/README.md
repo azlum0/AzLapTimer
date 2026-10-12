@@ -4,6 +4,9 @@ Every `.ts` file in this folder that exports a `draw` function shows up on the l
 page as a choice under **Background**, named after the file. To add one, drop the file here and
 deploy.
 
+The `corgi` folder is not a background. It holds the twelve drawings for the corgi first screen,
+named so they sort from slowest to fastest, each 720x480 with a transparent background.
+
 ## What a background file looks like
 
 ```ts

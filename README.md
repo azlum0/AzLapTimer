@@ -22,6 +22,8 @@ into a small programmable display, and it borrows its idea from the Racelogic VB
   is running.
 - **Your choice of look**: twelve colour schemes, an optional Racelogic-style first screen, the
   delta colour on the digits or flooding the whole screen, and moving backgrounds.
+- **A corgi**, if you want one: a first screen where a cartoon corgi in a GT3 dozes in the pits,
+  cruises when you are level with the reference lap, and lights the exhaust as you pull ahead.
 - **Sleeps when you are not driving**: after three minutes with no sim running, or at a tap of
   Sleep now on the waiting screen, the screen goes black and the backlight turns right down. A
   touch, a button, the dial, or a sim starting wakes it and puts the brightness back.
@@ -56,7 +58,8 @@ These are screenshots taken off a Car Thing, with demo laps on the timing screen
 The **Display** page sets how it looks:
 
 - one of twelve colour schemes
-- whether the first screen uses the standard look or copies a Racelogic VBOX LapTimer
+- whether the first screen uses the standard look, copies a Racelogic VBOX LapTimer, or hands
+  the screen to the corgi, whose drawing changes with every tenth of a second gained or lost
 - where the delta's colour goes: nowhere, onto the digits, across the whole screen in one colour or
   the other, or across the whole screen as a blend between the two as the gap changes
 - a plain background or a moving one. A colour that fills the screen would hide a moving

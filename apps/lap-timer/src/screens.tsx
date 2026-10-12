@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { delta, lapTime, rlDelta, rlLapTime, speed, tone, unitLabel } from './format';
 import { ANIMATIONS } from './animations';
+import { Corgi } from './corgi';
 import {
   backdropInUse,
   deltaStyleInUse,
@@ -57,7 +58,8 @@ function floodColour(style: DeltaStyle, seconds: number): string | null {
 
 /** the predictive screen: how far up or down on the reference lap, right now */
 export function DeltaScreen(props: ScreenProps) {
-  return props.settings.deltaLook === 'racelogic' ? <RacelogicDelta {...props} /> : <StandardDelta {...props} />;
+  const Look = DELTA_LOOK[props.settings.deltaLook];
+  return <Look {...props} />;
 }
 
 function StandardDelta({ frame, session, settings, flash }: ScreenProps) {
@@ -261,6 +263,79 @@ function RacelogicDelta({ frame, session, settings, flash }: ScreenProps) {
     </div>
   );
 }
+
+/**
+ * The first screen with a corgi driving across it. The drawing is the delta: asleep in the pits,
+ * cruising when level with the reference, and flat out with the exhaust alight when well up on it.
+ * The numbers keep to a band along the top, clear of the car.
+ */
+function CorgiDelta({ frame, session, settings, flash }: ScreenProps) {
+  const refMode = session?.refMode ?? 'best';
+  const last = session?.laps.at(-1) ?? null;
+  const showing = !flash && frame.live && frame.delta !== null;
+  const style = deltaStyleInUse(settings);
+  const flood = showing ? floodColour(style, frame.delta!) : null;
+  const flooded = flood !== null;
+  const tint = (seconds: number | null | undefined) =>
+    flooded || style === 'off' ? 'text-off-white' : TONE[tone(seconds)];
+  // while a finished lap is held up, the corgi shows how that lap went and not the first metres of the next
+  const pace = flash ? (session?.lastDelta ?? null) : frame.delta;
+
+  let label;
+  let main;
+  if (flash) {
+    label = `Lap ${flash.n}`;
+    main = <Digits text={lapTime(flash.time)} size={96} className={flash.valid ? '' : 'text-soft'} />;
+  } else if (showing) {
+    label = `Delta to ${REF_LABEL[refMode]}`;
+    main = <Digits text={delta(frame.delta)} size={96} className={tint(frame.delta)} />;
+  } else if (frame.live) {
+    label = frame.ref === null ? 'No reference lap yet' : 'Cross the line to start';
+    main = <Digits text={lapTime(frame.time, 1)} size={96} />;
+  } else {
+    label = last ? `Last lap ${last.n}` : 'Ready';
+    main = <Digits text={lapTime(last?.time)} size={96} className={last?.valid === false ? 'text-soft' : ''} />;
+  }
+
+  return (
+    <div
+      className="relative h-full overflow-hidden"
+      style={flooded ? { background: `color-mix(in srgb, ${flood} 62%, var(--color-screen))` } : undefined}>
+      <Corgi frame={frame} delta={pace} />
+      <div className="relative z-[2] flex items-end justify-between gap-6 px-7 pt-4">
+        <Cell className="flex-none" bright={flooded} label={label}>
+          {main}
+        </Cell>
+        {flash ? (
+          session?.lastDelta !== null &&
+          session?.lastDelta !== undefined && (
+            <Cell className="flex-none" bright={flooded} label={`To ${REF_LABEL[refMode]}`}>
+              <Digits text={delta(session.lastDelta)} size={50} className={tint(session.lastDelta)} />
+            </Cell>
+          )
+        ) : (
+          <>
+            <Cell
+              className="flex-none"
+              bright={flooded}
+              label={
+                <>
+                  Lap {frame.lap} {!flooded && <Tag frame={frame} />}
+                </>
+              }>
+              <Digits text={lapTime(frame.live ? frame.time : null, 1)} size={50} />
+            </Cell>
+            <Cell className="flex-none" bright={flooded} label="Predicted">
+              <Digits text={lapTime(frame.live ? frame.pred : null)} size={50} className={tint(frame.delta)} />
+            </Cell>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const DELTA_LOOK = { standard: StandardDelta, racelogic: RacelogicDelta, corgi: CorgiDelta } as const;
 
 const LAPS_SHOWN = 7;
 
@@ -480,6 +555,7 @@ export function SetupScreen({
 const LOOK_OPTIONS = [
   ['standard', 'STANDARD'],
   ['racelogic', 'RACELOGIC'],
+  ['corgi', 'CORGI'],
 ] as const;
 const STYLE_OPTIONS = [
   ['off', 'OFF'],
@@ -533,9 +609,10 @@ export function DisplayScreen({
         </div>
       </Field>
       <div className="flex gap-6">
-        <Field className="flex-[3]" label="First screen">
+        <Field className="flex-[4]" label="First screen">
           <Choice
             className="h-[52px]"
+            columns={LOOK_OPTIONS.length}
             options={LOOK_OPTIONS}
             value={settings.deltaLook}
             onPick={deltaLook => update({ deltaLook })}
@@ -545,6 +622,7 @@ export function DisplayScreen({
           {/* with the background moving, the screen-filling choices give way to the digits and come back with it off */}
           <Choice
             className="h-[52px]"
+            columns={STYLE_OPTIONS.length}
             options={STYLE_OPTIONS}
             value={deltaStyleInUse(settings)}
             unavailable={backdropInUse(settings) ? SCREEN_FILLING : []}
